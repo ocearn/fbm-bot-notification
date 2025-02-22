@@ -1,3 +1,16 @@
+// Function to show custom push alert message
+function showAlert(message) {
+    const alertBox = document.getElementById("customAlert");
+    const alertMessage = document.getElementById("alertMessage");
+
+    alertMessage.textContent = message;
+    alertBox.classList.add("show");
+
+    setTimeout(() => {
+        alertBox.classList.remove("show");
+    }, 1500); // 1.5 seconds later, it will disappear
+}
+
 // Function to send a message to Telegram users
 function sendMessage() {
     // Get input values
@@ -9,48 +22,45 @@ function sendMessage() {
 
     // Validate inputs
     if (!botToken) {
-        alert("Please enter your Bot Token.");
+        showAlert("Please enter your Bot Token.");
         return;
     }
     if (!chatIds) {
-        alert("Please enter at least one Chat ID.");
+        showAlert("Please enter at least one Chat ID.");
         return;
     }
     if (!customMessage && !uploadFile) {
-        alert("Please enter a custom message or upload an image.");
+        showAlert("Please enter a custom message or upload an image.");
         return;
     }
 
     // Validate file type (only images allowed)
     if (uploadFile && !uploadFile.type.startsWith("image/")) {
-        alert("Only image files are allowed. Please upload a valid image.");
+        showAlert("Only image files are allowed. Please upload a valid image.");
         return;
     }
 
     // Prepare unique chat IDs (remove duplicates)
     const chatIdArray = Array.from(new Set(chatIds.split(/[\n,]+/).map(id => id.trim()).filter(id => id)));
 
-    // Track successful and failed messages
+    // Track failed messages
     let failedChats = [];
 
-    // Iterate through chat IDs and send messages individually
+    // Iterate through chat IDs and send messages
     const promises = chatIdArray.map(chatId => {
         return new Promise(resolve => {
-            // Create FormData for file upload
             const formData = new FormData();
             formData.append("chat_id", chatId);
 
-            // Check if file is uploaded
             if (uploadFile) {
-                formData.append("photo", uploadFile); // Use 'photo' for images
+                formData.append("photo", uploadFile);
                 if (customMessage) {
-                    formData.append("caption", customMessage); // Add custom message as caption
+                    formData.append("caption", customMessage);
                 }
             } else {
-                formData.append("text", customMessage); // Add message text
+                formData.append("text", customMessage);
             }
 
-            // If custom buttons are provided, add them to the payload
             if (customButtons) {
                 const inlineKeyboard = customButtons.split("\n").map(buttonLine => {
                     const buttons = buttonLine.split("|").map(button => {
@@ -62,12 +72,10 @@ function sendMessage() {
                 formData.append("reply_markup", JSON.stringify({ inline_keyboard: inlineKeyboard }));
             }
 
-            // Determine endpoint (sendPhoto or sendMessage)
             const endpoint = uploadFile
                 ? `https://api.telegram.org/bot${botToken}/sendPhoto`
                 : `https://api.telegram.org/bot${botToken}/sendMessage`;
 
-            // Send the request
             fetch(endpoint, {
                 method: "POST",
                 body: formData,
@@ -88,25 +96,19 @@ function sendMessage() {
         });
     });
 
-    // Wait for all promises to complete
     Promise.all(promises).then(results => {
         const successCount = results.filter(result => result.success).length;
 
         if (successCount > 0) {
-            alert("Message send successful");
+            showAlert("Message sent successfully.");
         }
         if (failedChats.length > 0) {
-            console.error(`Failed to send messages to these Chat IDs: ${failedChats.join(", ")}`);
+            console.error(`Failed Chat IDs: ${failedChats.join(", ")}`);
         }
     });
 }
 
-
-
-
-
-
-
+// File upload preview system
 const fileInput = document.getElementById("fileInput");
 const fileName = document.getElementById("fileName");
 const previewBtn = document.getElementById("previewBtn");
@@ -116,33 +118,33 @@ const previewImage = document.getElementById("previewImage");
 const closePopup = document.getElementById("close-PR-Popup");
 
 fileInput.addEventListener("change", () => {
-  if (fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    fileName.textContent = file.name;
-    previewBtn.hidden = false;
-    removeBtn.hidden = false;
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileName.textContent = file.name;
+        previewBtn.hidden = false;
+        removeBtn.hidden = false;
 
-    const fileReader = new FileReader();
-    fileReader.onload = () => {
-      previewImage.src = fileReader.result;
-    };
-    fileReader.readAsDataURL(file);
-  }
+        const fileReader = new FileReader();
+        fileReader.onload = () => {
+            previewImage.src = fileReader.result;
+        };
+        fileReader.readAsDataURL(file);
+    }
 });
 
 previewBtn.addEventListener("click", () => {
-  previewPopup.classList.remove("hidden");
+    previewPopup.classList.remove("hidden");
 });
 
 removeBtn.addEventListener("click", () => {
-  fileInput.value = "";
-  fileName.textContent = "No file chosen";
-  previewBtn.hidden = true;
-  removeBtn.hidden = true;
+    fileInput.value = "";
+    fileName.textContent = "No file chosen";
+    previewBtn.hidden = true;
+    removeBtn.hidden = true;
 });
 
 closePopup.addEventListener("click", () => {
-  previewPopup.classList.add("hidden");
+    previewPopup.classList.add("hidden");
 });
 
 
